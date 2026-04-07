@@ -36,6 +36,7 @@ import About from "./pages/About";
 import Support from "./pages/Support";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
+import CampusCommuteApp from "./pages/CampusCommuteApp";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,9 @@ const App = () => (
               
               {/* Admin */}
               <Route path="/admin" element={<AdminRoute element={<AdminPanel />} />} />
+              
+              {/* Tracker Demo */}
+              <Route path="/live-tracker" element={<CampusCommuteApp />} />
               
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
