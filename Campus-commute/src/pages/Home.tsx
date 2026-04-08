@@ -19,6 +19,19 @@ const Home = () => {
   // Calculate dynamic ETA using first unvisited stop (placeholder 10m fallback)
   const eta = 10; 
 
+  if (!selectedRoute) {
+    return (
+      <MobileLayout>
+         <div className="flex items-center justify-center h-screen w-full bg-background">
+            <div className="animate-pulse flex flex-col items-center">
+               <Bus className="w-12 h-12 text-primary opacity-50 mb-4" />
+               <p className="text-muted-foreground font-medium">Booting Tracker Network...</p>
+            </div>
+         </div>
+      </MobileLayout>
+    );
+  }
+
   const handleScroll = (direction: "left" | "right") => {
     const container = document.getElementById("routes-container-desktop");
     if (container) {

@@ -4,8 +4,8 @@ import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, useMap } from 'reac
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { io } from 'socket.io-client';
+import 'leaflet-routing-machine';
 import { useRouteContext } from '../contexts/RouteContext';
-import { useToast } from '@/hooks/use-toast';
 
 // Helper to auto-recenter the map on the live position or start position
 const RecenterMap = ({ lat, lng }: { lat: number; lng: number }) => {
@@ -37,36 +37,62 @@ const BusIcon = L.divIcon({
   iconAnchor: [20, 20]
 });
 
+const RoutingControl = ({ stops, setIsRouteBusy }: { stops: any[], setIsRouteBusy: (b: boolean) => void }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !stops || stops.length < 2) return;
+
+    const waypoints = stops.map((s: any) => L.latLng(s.coordinates.lat, s.coordinates.lng));
+
+    const control = L.Routing.control({
+      waypoints,
+      routeWhileDragging: false,
+      addWaypoints: false,
+      draggableWaypoints: false,
+      showAlternatives: true,
+      fitSelectedRoutes: true,
+      show: false, // Hide default ugly itinerary
+      lineOptions: {
+        styles: [{ color: '#0ea5e9', opacity: 1, weight: 6 }]
+      },
+      altLineOptions: {
+        styles: [{ color: '#9ca3af', opacity: 0.8, weight: 5 }]
+      },
+      createMarker: () => null // Prevent default marker creation since we have ours
+    }).addTo(map);
+
+    control.on('routesfound', function(e: any) {
+      if (e.routes && e.routes.length > 1) {
+        setIsRouteBusy(true);
+      } else {
+        setIsRouteBusy(false);
+      }
+    });
+
+    return () => {
+      try {
+        map.removeControl(control);
+      } catch (e) {}
+    };
+  }, [map, stops, setIsRouteBusy]);
+
+  return null;
+};
+
 const RouteMap: React.FC<any> = () => {
   const { selectedRoute, liveBusPosition, setLiveBusPosition } = useRouteContext();
   const { toast } = useToast();
   
-  const [geoJsonData, setGeoJsonData] = useState<any>(null);
   const [visitedStops, setVisitedStops] = useState<Set<string>>(new Set());
+  const [isRouteBusy, setIsRouteBusy] = useState(false);
 
-  // 1. OSRM Road Snap Hook
+  if (!selectedRoute || !selectedRoute.stoppages || selectedRoute.stoppages.length === 0) {
+    return <div className="w-full h-full min-h-[50vh] flex items-center justify-center bg-slate-100 text-slate-500 font-medium">Loading Routes...</div>;
+  }
+
+  // Reset visited stops on route change
   useEffect(() => {
-    // Generate valid OSRM coord string: lng,lat;lng,lat
-    const coordsString = selectedRoute.stoppages
-      .map(s => `${s.coordinates.lng},${s.coordinates.lat}`)
-      .join(';');
-      
-    // Call strict route API
-    fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.routes && data.routes[0]) {
-          setGeoJsonData(data.routes[0].geometry);
-        } else {
-          setGeoJsonData(null); // Fallback to polyline if no roads found
-        }
-      })
-      .catch((e) => {
-        console.error("OSRM Route Failed:", e);
-        setGeoJsonData(null);
-      });
-      
-    // Reset visited stops on route change
     setVisitedStops(new Set());
   }, [selectedRoute]);
 
@@ -134,15 +160,31 @@ const RouteMap: React.FC<any> = () => {
   return (
     <div className="w-full h-full min-h-[50vh] relative z-0">
       
+      {/* Traffic Pill Overlays */}
+      <div className="absolute top-[180px] md:top-8 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none transition-all duration-500">
+        {isRouteBusy ? (
+          <div className="bg-amber-500/95 backdrop-blur text-white px-5 py-2.5 rounded-full text-xs md:text-sm shadow-xl flex items-center font-bold tracking-widest border-2 border-amber-400">
+            HEAVY TRAFFIC - SHOWING ALTERNATIVES
+          </div>
+        ) : (
+          <div className="bg-emerald-500/95 backdrop-blur text-white px-5 py-2.5 rounded-full text-xs md:text-sm shadow-xl flex items-center font-bold tracking-widest border-2 border-emerald-400">
+            FASTEST ROUTE
+          </div>
+        )}
+      </div>
+
       {/* Dynamic CSS Injection to smoothly slide the Leaflet wrapper div 
           preventing rigid socket frame-jumping natively */}
       <style>{`
         .live-bus-marker {
           transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
         }
+        .leaflet-routing-alt {
+            display: none !important; /* Force hide the text itinerary panel if it pops up */
+        }
       `}</style>
 
-      <MapContainer 
+      <MapContainer
         center={startPoint} 
         zoom={14} 
         zoomControl={false}
@@ -166,19 +208,8 @@ const RouteMap: React.FC<any> = () => {
 
         <RecenterMap lat={startPoint[0]} lng={startPoint[1]} />
 
-        {/* Draw GeoJSON if OSRM returned success, otherwise raw Polyline fallback */}
-        {geoJsonData ? (
-           <GeoJSON 
-            key={selectedRoute.busNumber + "geojson"}
-            data={geoJsonData} 
-            style={{ color: '#0d9488', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }} 
-          />
-        ) : (
-           <Polyline 
-            positions={rawFallbackCoords} 
-            pathOptions={{ color: '#0d9488', weight: 5, opacity: 0.7, dashArray: '10, 10' }} 
-          />
-        )}
+        {/* Native Road Snapped Routing Machine */}
+        <RoutingControl stops={selectedRoute.stoppages} setIsRouteBusy={setIsRouteBusy} />
 
         {/* Nodes */}
         {startPoint && <Marker position={startPoint} icon={StartIcon} />}
