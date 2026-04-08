@@ -148,10 +148,10 @@ const RouteMap: React.FC<any> = () => {
         zoomControl={false}
         className="w-full h-full min-h-screen z-0"
       >
-        {/* Base Layer */}
+        {/* Base Layer - Vibrant OpenStreetMap Standard */}
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
         {/* 
