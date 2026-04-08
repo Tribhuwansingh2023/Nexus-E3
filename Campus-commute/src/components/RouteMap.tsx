@@ -47,11 +47,11 @@ const RouteMap: React.FC<any> = () => {
   useEffect(() => {
     // Generate valid OSRM coord string: lng,lat;lng,lat
     const coordsString = selectedRoute.stoppages
-      .map(s => \`\${s.coordinates.lng},\${s.coordinates.lat}\`)
+      .map(s => `${s.coordinates.lng},${s.coordinates.lat}`)
       .join(';');
       
     // Call strict route API
-    fetch(\`https://router.project-osrm.org/route/v1/driving/\${coordsString}?overview=full&geometries=geojson\`)
+    fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .then(data => {
         if (data.routes && data.routes[0]) {
@@ -103,7 +103,7 @@ const RouteMap: React.FC<any> = () => {
         if (distanceMeters < 500) {
           toast({
             title: "Upcoming Stop Warning",
-            description: \`\${stop.name} - Arriving Shortly!\`,
+            description: `${stop.name} - Arriving Shortly!`,
           });
           
           setVisitedStops(prev => {
@@ -135,11 +135,11 @@ const RouteMap: React.FC<any> = () => {
       
       {/* Dynamic CSS Injection to smoothly slide the Leaflet wrapper div 
           preventing rigid socket frame-jumping natively */}
-      <style>{\`
+      <style>{`
         .live-bus-marker {
           transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
         }
-      \`}</style>
+      `}</style>
 
       <MapContainer 
         center={startPoint} 
