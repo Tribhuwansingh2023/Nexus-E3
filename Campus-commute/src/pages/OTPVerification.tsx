@@ -199,62 +199,10 @@ const OTPVerification = () => {
                 </button>
               </p>
 
-              <button
-                onClick={() => {
-                  toast({
-                    title: "Verification Skipped",
-                    description: "You can verify your email later from settings.",
-                  });
-                  navigate("/success");
-                }}
-                className="w-full mt-4 py-3 text-sm text-muted-foreground hover:text-foreground border border-dashed border-muted-foreground/30 rounded-full transition-colors"
-              >
-                Skip Verification →
-              </button>
+
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-foreground text-center mb-4">
-                Change Email Address
-              </h1>
-              <p className="text-muted-foreground text-center mb-8">
-                Enter your new email address
-              </p>
-
-              <div className="mb-6">
-                <FormInput
-                  placeholder="Enter new email address"
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-4">
-                <GradientButton onClick={handleUpdateEmail}>
-                  Update Email
-                    className="w-14 h-14 text-center text-2xl font-semibold bg-background border-2 border-muted rounded-3xl focus:border-primary focus:outline-none transition-colors"
-                    />
-                  ))}
-                </div>
-
-                <GradientButton onClick={handleVerify}>
-                  Verify
-                </GradientButton>
-
-                <p className="text-center text-muted-foreground mt-6">
-                  Didn't receive code?{" "}
-                  <button 
-                    onClick={handleResend}
-                    className="text-foreground font-medium hover:underline"
-                    disabled={resendCount <= 0}
-                  >
-                    Resend({resendCount} left)
-                  </button>
-                </p>
-              </>
-            ) : (
-              <>
                 <h1 className="text-2xl font-bold text-foreground text-center mb-4">
                   Change Email Address
                 </h1>

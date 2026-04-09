@@ -187,7 +187,7 @@ const Home = () => {
 
           {/* ETA Pill constraint absolute tracking over map */}
           {liveBusPosition && (
-            <div className="absolute top-28 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <div className="absolute top-40 left-1/2 -translate-x-1/2 z-[1001] pointer-events-none">
               <div className="bg-primary/95 backdrop-blur text-primary-foreground px-5 py-2.5 rounded-full text-sm shadow-xl flex items-center gap-2 border border-primary-foreground/20">
                 <Clock className="w-4 h-4" />
                 <span className="font-medium whitespace-nowrap">Incoming in ~{eta} min</span>
