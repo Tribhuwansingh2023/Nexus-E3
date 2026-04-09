@@ -153,13 +153,9 @@ const SetPassword = () => {
             <GradientButton onClick={handleSignUp} disabled={isLoading}>
               {isLoading ? "Sending..." : "Sign Up"}
             </GradientButton>
-            <div className="mt-12">
-              <GradientButton onClick={handleSignUp}>
-                Sign Up
-              </GradientButton>
-            </div>
           </div>
         </div>
+      </div>
       </AuthCard>
     </MobileLayout>
   );
