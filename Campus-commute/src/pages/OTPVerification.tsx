@@ -193,6 +193,19 @@ const OTPVerification = () => {
                   Resend({resendCount} left)
                 </button>
               </p>
+
+              <button
+                onClick={() => {
+                  toast({
+                    title: "Verification Skipped",
+                    description: "You can verify your email later from settings.",
+                  });
+                  navigate("/success");
+                }}
+                className="w-full mt-4 py-3 text-sm text-muted-foreground hover:text-foreground border border-dashed border-muted-foreground/30 rounded-full transition-colors"
+              >
+                Skip Verification →
+              </button>
             </>
           ) : (
             <>

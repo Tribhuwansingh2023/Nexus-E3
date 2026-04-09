@@ -5,7 +5,7 @@ import MobileLayout from "@/components/MobileLayout";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import DriverSidebar from "@/components/DriverSidebar";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'leaflet/dist/leaflet.css';
@@ -19,29 +19,46 @@ const BusIcon = L.divIcon({
 
 const RoutingControl = ({ stops }: { stops: any[] }) => {
   const map = useMap();
+  const [routeFound, setRouteFound] = useState(false);
 
   useEffect(() => {
     if (!map || !stops || stops.length < 2) return;
     const waypoints = stops.map((s: any) => L.latLng(s.coordinates.lat, s.coordinates.lng));
-    const control = L.Routing.control({
+
+    const control = (L.Routing as any).control({
       waypoints,
       routeWhileDragging: false,
       addWaypoints: false,
       draggableWaypoints: false,
       showAlternatives: false,
       fitSelectedRoutes: true,
-      show: false, // Hide default text box
+      show: false,
+      createMarker: () => null, // Don't show default OSRM markers
       lineOptions: {
-        styles: [{ color: '#0ea5e9', opacity: 1, weight: 6 }]
+        styles: [{ color: '#0ea5e9', opacity: 0.85, weight: 6 }]
       }
     }).addTo(map);
 
+    control.on('routesfound', () => setRouteFound(true));
+    control.on('routingerror', () => {
+      console.warn('OSRM routing failed, using fallback polyline');
+      setRouteFound(false);
+    });
+
+    // Fit bounds to show all stops
+    const bounds = L.latLngBounds(waypoints);
+    map.fitBounds(bounds, { padding: [40, 40] });
+
     return () => {
-      try {
-        map.removeControl(control);
-      } catch (e) {}
+      try { map.removeControl(control); } catch (e) {}
     };
   }, [map, stops]);
+
+  // Fallback: draw straight polyline between stops if OSRM fails
+  if (!routeFound && stops && stops.length >= 2) {
+    const positions: [number, number][] = stops.map((s: any) => [s.coordinates.lat, s.coordinates.lng]);
+    return <Polyline positions={positions} pathOptions={{ color: '#0ea5e9', weight: 5, opacity: 0.7, dashArray: '10, 10' }} />;
+  }
 
   return null;
 };
@@ -170,6 +187,20 @@ const DriverHome = () => {
             {assignedRoute && (
                <RoutingControl stops={assignedRoute.stoppages} />
             )}
+
+            {/* Stop markers along the route */}
+            {assignedRoute && assignedRoute.stoppages.map((stop, idx) => (
+              <CircleMarker
+                key={idx}
+                center={[stop.coordinates.lat, stop.coordinates.lng]}
+                radius={7}
+                pathOptions={{ color: '#1e40af', fillColor: '#3b82f6', fillOpacity: 0.9, weight: 2 }}
+              >
+                <Tooltip direction="top" offset={[0, -8]} permanent={false}>
+                  <span style={{ fontWeight: 600 }}>{idx + 1}. {stop.name}</span>
+                </Tooltip>
+              </CircleMarker>
+            ))}
 
             {coords && (
               <Marker position={[coords.lat, coords.lng]} icon={BusIcon}>
