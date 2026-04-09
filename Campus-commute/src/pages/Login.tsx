@@ -118,6 +118,30 @@ const Login = () => {
     }
   };
 
+  const handleLogin = async () => {
+    setErrors({});
+    setIsLoading(true);
+    try {
+      emailSchema.parse(email);
+      passwordSchema.parse(password);
+      const success = await login(email, password, pendingRole || "student");
+      if (success) {
+        toast({ title: "Login Successful", description: "Welcome back!" });
+        navigate(pendingRole === "driver" ? "/driver-home" : "/home");
+      } else {
+        toast({ title: "Login Failed", description: "Invalid email or password", variant: "destructive" });
+      }
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const newErrors: any = {};
+        err.errors.forEach((e) => { if (e.path[0]) newErrors[e.path[0]] = e.message; });
+        setErrors(newErrors);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <MobileLayout>
       <AuthCard>
