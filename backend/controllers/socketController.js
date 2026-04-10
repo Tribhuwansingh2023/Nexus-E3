@@ -38,7 +38,7 @@ function socketHandler(io) {
       // Fixed critical syntax error referencing non-existent calculation function
       const stopETAs = await calculateStopWiseETA(
         { lat, lng },
-        route
+        route.stoppages
       );
 
       io.to(busId).emit("bus-stop-eta", stopETAs);
@@ -68,7 +68,7 @@ function socketHandler(io) {
       // Calculate and broadcast ETAs utilizing correct imported func reference
       const stopETAs = await calculateStopWiseETA(
         { lat, lng },
-        route
+        route.stoppages
       );
       
       io.to(busId).emit("bus-stop-eta", stopETAs);

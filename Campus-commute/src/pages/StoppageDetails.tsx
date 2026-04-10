@@ -2,10 +2,24 @@ import MobileLayout from "@/components/MobileLayout";
 import BackButton from "@/components/BackButton";
 import AuthCard from "@/components/AuthCard";
 import { useRouteContext } from "@/contexts/RouteContext";
-import { Clock } from "lucide-react";
+import { Clock, Bus } from "lucide-react";
 
 const StoppageDetails = () => {
   const { selectedRoute } = useRouteContext();
+
+  if (!selectedRoute) {
+    return (
+      <MobileLayout>
+        <AuthCard className="max-h-[95vh] overflow-y-auto flex flex-col p-6 sm:p-8 my-auto">
+          <div className="flex flex-col items-center justify-center py-20">
+            <Bus className="w-12 h-12 text-primary opacity-50 mb-4 animate-pulse" />
+            <p className="text-muted-foreground font-medium">Loading route details...</p>
+          </div>
+        </AuthCard>
+      </MobileLayout>
+    );
+  }
+
   const stoppages = selectedRoute.stoppages;
 
   return (

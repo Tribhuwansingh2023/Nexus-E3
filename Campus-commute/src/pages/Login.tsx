@@ -82,10 +82,13 @@ const passwordSchema = z.string().min(8, "Password must be at least 8 characters
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
-      const success = await login(email, password, pendingRole || "student");
+      const role = pendingRole || "student";
+      const success = await login(email, password, role);
       if (success) {
         toast({ title: "Login Successful", description: "Welcome back!" });
-        navigate(pendingRole === "driver" ? "/driver-home" : "/home");
+        // The user's role from backend is now stored in auth context
+        // We check pendingRole first (from onboarding flow), but the actual role comes from backend
+        navigate(role === "driver" ? "/driver-home" : "/home");
       } else {
         toast({ title: "Login Failed", description: "Invalid email or password", variant: "destructive" });
       }

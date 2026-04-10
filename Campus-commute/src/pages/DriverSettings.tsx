@@ -1,8 +1,9 @@
 import MobileLayout from "@/components/MobileLayout";
 import AuthCard from "@/components/AuthCard";
 import BackButton from "@/components/BackButton";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Switch } from "@/components/ui/switch";
 import GradientButton from "@/components/GradientButton";
 import { useNavigate } from "react-router-dom";
@@ -11,20 +12,11 @@ import DeleteAccountModal from "@/components/DeleteAccountModal";
 
 const DriverSettings = () => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [locationSharing, setLocationSharing] = useState(true);
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (localStorage.getItem("theme") === "dark") setDarkMode(true);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    localStorage.setItem("theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
 
   return (
     <MobileLayout>
@@ -57,7 +49,7 @@ const DriverSettings = () => {
                   <p className="text-sm text-foreground font-medium">Dark Mode</p>
                   <p className="text-muted-foreground text-xs">Toggle app appearance</p>
                 </div>
-                <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
               </div>
 
               <div className="bg-muted rounded-2xl p-4">

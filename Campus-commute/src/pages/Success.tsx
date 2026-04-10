@@ -4,10 +4,12 @@ import MobileLayout from "@/components/MobileLayout";
 import AuthCard from "@/components/AuthCard";
 import GradientButton from "@/components/GradientButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Success = () => {
   const navigate = useNavigate();
   const { pendingRole, completeSignup } = useAuth();
+  const { toast } = useToast();
 
   const handleContinue = async () => {
     const success = await completeSignup({});

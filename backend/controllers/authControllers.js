@@ -76,22 +76,25 @@ module.exports.login = async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
     
-    // Comparing the password
-    bcrypt.compare(password, user.password, function (err, result) {
-      if (result) {
-        let token = generateToken(user);
-        res.cookie("token", token);
-        res.status(200).json({ 
-          message: "Login successful", 
-          user: {
-            _id: user._id,
-            fullname: user.fullname,
-            email: user.email
-          }
-        });
-      } else {
-        res.status(400).json({ error: "Invalid credentials" });
-      }
+    // Comparing the password using async/await
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    let token = generateToken(user);
+    res.cookie("token", token);
+    res.status(200).json({ 
+      message: "Login successful", 
+      user: {
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: user.role,
+        routeNo: user.routeNo,
+        profileImage: user.profileImage
+      },
+      token: token
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -196,11 +199,12 @@ module.exports.googleLogin = async (req, res) => {
     let user = await userModel.findOne({ email: googleUser.email });
     
     if (!user) {
-      // Auto-register via Google
+      // Auto-register via Google — hash the dummy password for consistency
+      const hashedDummyPassword = await bcrypt.hash("OAuthGeneratedPassword!123", 10);
       user = await userModel.create({
         fullname: googleUser.name,
         email: googleUser.email,
-        password: "OAuthGeneratedPassword!123", // Dummy password for OAuth users
+        password: hashedDummyPassword,
         profileImage: googleUser.picture,
         role: assignedRole,
         routeNo: assignedRole === 'driver' ? 'CUTTACK-1-A' : undefined

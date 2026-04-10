@@ -28,7 +28,7 @@ export interface BusRoute {
 
 interface RouteContextType {
   routes: BusRoute[];
-  selectedRoute: BusRoute;
+  selectedRoute: BusRoute | null;
   setSelectedRoute: (route: BusRoute) => void;
   liveBusPosition: [number, number];
   setLiveBusPosition: React.Dispatch<React.SetStateAction<[number, number]>>;
@@ -59,8 +59,6 @@ export const RouteProvider = ({ children }: { children: ReactNode }) => {
     };
     fetchRoutes();
   }, []);
-
-  if (!selectedRoute) return null; // Prevent rendering components that depend on routes before they load
 
   return (
     <RouteContext.Provider
