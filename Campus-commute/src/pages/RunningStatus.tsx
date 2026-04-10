@@ -288,7 +288,7 @@ const RunningStatus = () => {
         {showAlarmModal && (
           <>
             <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowAlarmModal(false)} />
-            <div className="fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl z-50 p-6 pb-10 shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-background rounded-t-3xl z-50 p-6 pb-10 shadow-2xl animate-in slide-in-from-bottom duration-300">
               <h3 className="text-lg font-bold text-foreground mb-4">Set Arrival Alarm</h3>
               
               {/* Stop Selection */}
