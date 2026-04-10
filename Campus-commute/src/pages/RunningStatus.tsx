@@ -24,6 +24,7 @@ const RunningStatus = () => {
   const [alarmMinutes, setAlarmMinutes] = useState(15);
   const [alarmFired, setAlarmFired] = useState(false);
   const [showAlarmModal, setShowAlarmModal] = useState(false);
+  const [alarmStopName, setAlarmStopName] = useState<string>("");
 
   // Elapsed time counter
   const [elapsed, setElapsed] = useState("");
@@ -54,27 +55,57 @@ const RunningStatus = () => {
     return null;
   }, [stopETAs]);
 
+  // Selected stop ETA for alarm
+  const selectedStopETA = useMemo(() => {
+    if (!alarmStopName) return null;
+    const etaObj = stopETAs.find((e) => e.stopName === alarmStopName);
+    return etaObj ? etaObj.minutes : null;
+  }, [stopETAs, alarmStopName]);
+
+  // Set default alarm stop if empty
+  useEffect(() => {
+    if (selectedRoute && !alarmStopName) {
+      setAlarmStopName(selectedRoute.endPoint.name);
+    }
+  }, [selectedRoute, alarmStopName]);
+
   // Alarm trigger logic
   useEffect(() => {
-    if (!alarmEnabled || alarmFired || destinationETA === null) return;
-    if (destinationETA <= alarmMinutes) {
+    if (!alarmEnabled || alarmFired || selectedStopETA === null) return;
+    
+    // Check if the bus has already passed the stop.
+    const hasPassed = tripStatus?.visitedStops?.includes(alarmStopName);
+    if (hasPassed) {
+      setAlarmEnabled(false);
+      toast({ 
+        title: "Bus passed your stop", 
+        description: `The bus has already crossed ${alarmStopName}. Alarm disabled.` 
+      });
+      return;
+    }
+
+    if (selectedStopETA <= alarmMinutes) {
       setAlarmFired(true);
       // Browser notification
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("🔔 Bus Arrival Alert", {
-          body: `Your bus will arrive in ~${destinationETA} minutes!`,
+        new Notification(`🔔 Bus approaching ${alarmStopName}`, {
+          body: `Your bus will arrive in ~${selectedStopETA} minutes!`,
           icon: "/favicon.ico",
         });
       }
       toast({
         title: "🔔 Arrival Alert!",
-        description: `Bus arriving at destination in ~${destinationETA} min`,
+        description: `Bus arriving at ${alarmStopName} in ~${selectedStopETA} min`,
       });
     }
-  }, [alarmEnabled, alarmFired, destinationETA, alarmMinutes, toast]);
+  }, [alarmEnabled, alarmFired, selectedStopETA, alarmMinutes, alarmStopName, tripStatus?.visitedStops, toast]);
 
   // Request notification permission on alarm enable
   const enableAlarm = useCallback(() => {
+    if (!alarmStopName) {
+      toast({ title: "Error", description: "Please select a stop" });
+      return;
+    }
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -83,9 +114,9 @@ const RunningStatus = () => {
     setShowAlarmModal(false);
     toast({
       title: "⏰ Alarm Set",
-      description: `You'll be notified ${alarmMinutes} min before arrival`,
+      description: `Notify ${alarmMinutes} min before arrival at ${alarmStopName}`,
     });
-  }, [alarmMinutes, toast]);
+  }, [alarmMinutes, alarmStopName, toast]);
 
   const status = tripStatus?.status || "not-started";
 
@@ -240,11 +271,11 @@ const RunningStatus = () => {
               <Bell className="w-5 h-5" />
             )}
             <div className="flex-1 text-left">
-              <p className="font-medium text-sm">
-                {alarmEnabled ? `Alarm set — ${alarmMinutes} min before arrival` : "Set Arrival Alarm"}
+              <p className="font-medium text-sm truncate max-w-[200px]">
+                {alarmEnabled ? `Alarm set for ${alarmStopName}` : "Set Arrival Alarm"}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {alarmEnabled ? "Tap to disable" : "Get notified before the bus arrives"}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {alarmEnabled ? `Alert ${alarmMinutes}m before arrival` : "Get notified before the bus reaches your stop"}
               </p>
             </div>
             {alarmEnabled && (
@@ -261,8 +292,32 @@ const RunningStatus = () => {
             <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowAlarmModal(false)} />
             <div className="fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl z-50 p-6 pb-10 shadow-2xl animate-in slide-in-from-bottom duration-300">
               <h3 className="text-lg font-bold text-foreground mb-4">Set Arrival Alarm</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Notify me before the bus reaches the destination:
+              
+              {/* Stop Selection */}
+              <p className="text-sm font-semibold text-foreground mb-2">1. Select your target stop:</p>
+              <div className="mb-6 relative">
+                 <select 
+                   value={alarmStopName} 
+                   onChange={(e) => setAlarmStopName(e.target.value)}
+                   className="w-full appearance-none bg-muted hover:bg-muted/80 border border-border rounded-xl p-3.5 pr-8 text-sm text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors cursor-pointer"
+                 >
+                    {selectedRoute.stoppages.map(s => {
+                      const passed = tripStatus?.visitedStops?.includes(s.name);
+                      return (
+                         <option key={s.name} value={s.name} disabled={passed}>
+                            {s.name} {passed ? "(Already passed)" : ""}
+                         </option>
+                      );
+                    })}
+                 </select>
+                 <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                 </div>
+              </div>
+
+              {/* Time Selection */}
+              <p className="text-sm font-semibold text-foreground mb-2">
+                2. Notify me before arrival:
               </p>
               <div className="flex gap-3 mb-6">
                 {[5, 10, 15, 20, 30].map(m => (
