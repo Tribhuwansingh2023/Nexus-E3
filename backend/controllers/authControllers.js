@@ -130,29 +130,38 @@ module.exports.sendOTP = async (req, res) => {
     // Save new OTP
     await otpModel.create({ email, otp: otpCode });
 
-    // Send email using Nodemailer
-    let transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // Send email with a hard 5-second timeout using Promise.race
+    const sendEmailWithTimeout = () => {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
 
-    let info = await transporter.sendMail({
-      from: `"Campus Commute" <${process.env.EMAIL}>`,
-      to: email,
-      subject: "Verification Code for Campus Commute",
-      text: `Your verification code is: ${otpCode}. It will expire in 5 minutes.`,
-      html: `<p>Your verification code is: <b>${otpCode}</b>.</p><p>It will expire in 5 minutes.</p>`,
-    });
+      const emailPromise = transporter.sendMail({
+        from: `"Campus Commute" <${process.env.EMAIL}>`,
+        to: email,
+        subject: "Verification Code for Campus Commute",
+        text: `Your verification code is: ${otpCode}. It will expire in 5 minutes.`,
+        html: `<p>Your verification code is: <b>${otpCode}</b>.</p><p>It will expire in 5 minutes.</p>`,
+      });
 
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Email send timed out after 5s")), 5000)
+      );
+
+      return Promise.race([emailPromise, timeoutPromise]);
+    };
+
+    await sendEmailWithTimeout();
     res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
-    console.error("sendOTP error (Email might not be configured properly):", error.message);
-    console.log(`\n\n[DEV MODE] Bypass OTP for ${req.body.email}. Overwriting DB OTP to 1234.\n\n`);
+    console.error("sendOTP error:", error.message);
+    console.log(`\n[DEV MODE] Bypassing OTP for ${req.body.email}. Setting OTP to 1234.\n`);
     
-    // Overwrite the OTP in DB to 1234 so development can continue effortlessly
+    // Overwrite the OTP in DB to 1234 so development can continue
     try {
       await otpModel.deleteMany({ email: req.body.email });
       await otpModel.create({ email: req.body.email, otp: "1234" });
